@@ -80,15 +80,89 @@ nb_vector = [1 2 3 4];
 model_degrees = [1 2 3 4];
 
 % Read data.
-[u_val, y_val] = readData('dane_wer.txt');
-[u_learning, y_learning] = readData('dane.txt');
+[u_val, y_val] = readData('danedynwer4/danedynwer4.txt');
+[u_learning, y_learning] = readData('danedynucz4/danedynucz4.txt');
 
 for degree=model_degrees
-    pritnf('Models of %i', degree)
+    fprintf('Models of %i\n', degree)
     for na=na_vector
         for nb=nb_vector
-            printf('na=%i, nb=%i',na, nb);
-            getDynamicModel(na, nb, degree x_learning, y_learning)
+            fprintf('na=%i, nb=%i\n',na, nb);
+            [W, a,b, Error] = getDynamicModel(na, nb, degree, u_learning, y_learning,'no') %yes, no
+            
+            %Verify model.
+            y_vector_poly = zeros(1,length(u_val));
+            y_vector_poly(1:nb) = y_val(1:nb);
+            for i=max(na,nb)+1:length(u_val)
+                u = 1;
+                for j=1:degree
+                    for k=1:nb
+                       u = [u u_val(i-k).^j]; 
+                    end
+                end
+                for j=1:degree
+                    for k=1:na
+                       u = [u y_vector_poly(i-k).^j]; 
+                    end
+                end      
+                y_vector_poly(1,i) = W'*u';
+            end
+            
+            %Display results for werifying.
+%             figure;
+%             hold on;
+%             plot(1:length(y_vector_poly),y_vector_poly);
+%             plot(1:length(y_val),y_val);
+%             plot(1:length(u_val),u_val);
+%             hold off;
+%             title('Symulacja modelu MNK dla danych ucz¹cych');
+%             legend('y_{val}','y_{model}','u');
+%             xlabel('t');
+%             ylabel('y,u');
+% 
+%             figure;
+%             h = scatter(y_val,y_vector_poly,0.1);
+%             h.Marker='.';
+%             title('Relacja modelu MNK dla danych ucz¹cych');
+%             xlabel('y_{val}');
+%             ylabel('y_{mod}');
         end
     end
 end
+
+%% Experimental static characteristic degree
+Wdyn = [0.000664964992374448;0.00840022541185356;-0.00385019962425829;0.0126918890956658;0.0297501377147536;-0.00908219924044421;-0.0209870455236019;-0.0347898616553102;0.00389270250560253;-0.0147251628540515;0.0379405433374021;0.0113439870870900;0.0264050893831101;0.0129786889612299;0.0399999350273695;0.0234411739204131;0.00691202657199602;0.545394830849041;0.326464311053444;0.133234846180000;-0.0990295278644668;0.191613623406062;-0.0220781684059992;-0.114388769814720;-0.0281154786455814;-0.0267948523934677;0.0150910218935099;-0.0177829463551522;0.0356502576404348;-0.0384919731640682;-0.00508822854579525;0.0342361381018197;-0.00178940157318698];
+na_dyn = 4;
+nb_dyn = 4;
+degree_dyn = 4;
+
+Wstat = [];
+
+y0 = 0;
+u0= -1:0.1:1;
+y_dyn_vector = zeros(length(u0),1);
+y_stat_vector = zeros(length(u0),1);
+
+for i=1:length(u0)
+    i
+    
+    %Found static value form dynamic model.
+    static_ch_fun = @(x) x - countStaticFromModel(u0(i), x, W, na_dyn, nb_dyn, degree_dyn);
+    y_dyn_vector(i) = fsolve(static_ch_fun,y0);
+    
+    %Count static value from static model.
+    for j=1:length(Wstat)
+        y_stat_vector = y_stat_vector + W(j)*u0(i).^(j-1);
+    end
+end
+
+figure;
+plot(u0,y_dyn_vector);
+hold on;
+plot(u0,y_stat_vector);
+
+title('Static model from dynamic model');
+xlabel('u_{stat}');
+ylabel('y_{stat}');
+legend('from dynamic model', 'from static model')
+
