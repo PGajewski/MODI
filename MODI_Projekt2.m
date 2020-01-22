@@ -88,7 +88,7 @@ for degree=model_degrees
     for na=na_vector
         for nb=nb_vector
             printf('na=%i, nb=%i',na, nb);
-            getDynamicModel(na, nb, degree x_learning, y_learning)
+            getDynamicModel(na, nb, degree, x_learning, y_learning)
         end
     end
 end
