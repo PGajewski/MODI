@@ -180,14 +180,6 @@ for degree=model_degrees
                     y_vector_poly(1,i) = W'*u';
                 end
                 plot(1:length(y_vector_poly),y_vector_poly);
-                if na == nb
-                    switch(mode)
-                        case 'ARX'
-                            arx_valid_error_vector = immse(y_vector_poly, y_learning);
-                        case 'OE'
-                            oe_valis_error_vector = immse(y_vector_poly, y_learning);
-                    end                   
-                end
             end
             legend('u','y_{ARX}','y_{OE}')
             hold off;
@@ -223,13 +215,10 @@ for degree=model_degrees
                     y_vector_poly(1,i) = W'*u';
                 end
                 plot(1:length(y_vector_poly),y_vector_poly);
-                if na == nb
-                    switch(mode)
-                        case 'ARX'
-                            arx_learning_error_vector = immse(y_vector_poly, y_learning);
-                        case 'OE'
-                            oe_learning_error_vector = immse(y_vector_poly, y_learning);
-                    end                   
+                switch(mode)
+                    case 'ARX'
+                        arx_learning_error_vector = immse(
+                    case 'OE'
                 end
             end
             legend('u','y_{ARX}','y_{OE}')
