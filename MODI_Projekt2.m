@@ -105,9 +105,9 @@ ylabel('error');
 title('Static models error');
 legend('Learning set error','Validating set error');
 %% Dynamic models identification.
-na_vector = [1 2 3];
-nb_vector = [1 2 3];
-model_degrees = [1 2 3 4];
+na_vector = [1 2 3 4 5 6 7];
+nb_vector = [1 2 3 4 5 6 7];
+model_degrees = [1 2 3 4 5 6 7];
 
 % Read data.
 [u_val, y_val] = readData('danedynwer4/danedynwer4.txt');
@@ -153,6 +153,7 @@ for degree=model_degrees
             figure;
             hold on;
             plot(1:length(u_val),u_val)
+            plot(1:length(y_val),y_val)
             title(sprintf('Symulacja modelu [%i,%i,%i] dla danych weryfikuj¹cych', na, nb, degree));
             xlabel('t');
             ylabel('y,u');
@@ -183,19 +184,20 @@ for degree=model_degrees
                 if na == nb
                     switch(mode)
                         case 'ARX'
-                            arx_valid_error_vector = immse(y_vector_poly, y_learning);
+                            arx_valid_error_vector(degree,na) = immse(y_vector_poly, y_learning);
                         case 'OE'
-                            oe_valis_error_vector = immse(y_vector_poly, y_learning);
+                            oe_valid_error_vector(degree,na) = immse(y_vector_poly, y_learning);
                     end                   
                 end
             end
-            legend('u','y_{ARX}','y_{OE}')
+            legend('u','y_{val}','y_{ARX}','y_{OE}');
             hold off;
             
             %Validating for learning set.
             figure;
             hold on;
-            plot(1:length(u_val),u_val)
+            plot(1:length(u_learning),u_learning)
+            plot(1:length(y_learning),y_learning)
             title(sprintf('Symulacja modelu [%i,%i,%i] dla danych ucz¹cych', na, nb, degree));
             xlabel('t');
             ylabel('y,u');
@@ -226,13 +228,13 @@ for degree=model_degrees
                 if na == nb
                     switch(mode)
                         case 'ARX'
-                            arx_learning_error_vector = immse(y_vector_poly, y_learning);
+                            arx_learning_error_vector(degree,na) = immse(y_vector_poly, y_learning);
                         case 'OE'
-                            oe_learning_error_vector = immse(y_vector_poly, y_learning);
+                            oe_learning_error_vector(degree,na) = immse(y_vector_poly, y_learning);
                     end                   
                 end
             end
-            legend('u','y_{ARX}','y_{OE}')
+            legend('u','y_{learning}','y_{ARX}','y_{OE}');
             hold off;
             
             %Display results for werifying.
@@ -246,6 +248,29 @@ for degree=model_degrees
         end
     end
 end
+
+%Plot error surfs.
+figure(200);
+surf(arx_learning_error_vector);
+hold on;
+surf(arx_valid_error_vector);
+hold off;
+title('ARX error surface');
+xlabel('N');
+ylabel('na,nb');
+zlabel('error');
+legend('Learning data set', 'Validate data set');
+
+figure(201);
+surf(oe_learning_error_vector);
+hold on;
+surf(oe_valid_error_vector);
+hold off;
+title('OE error surface');
+xlabel('N');
+ylabel('na,nb');
+zlabel('error');
+legend('Learning data set', 'Validate data set');
 
 %% Experimental static characteristic degree
 Wdyn = [0.000664964992374448;0.00840022541185356;-0.00385019962425829;0.0126918890956658;0.0297501377147536;-0.00908219924044421;-0.0209870455236019;-0.0347898616553102;0.00389270250560253;-0.0147251628540515;0.0379405433374021;0.0113439870870900;0.0264050893831101;0.0129786889612299;0.0399999350273695;0.0234411739204131;0.00691202657199602;0.545394830849041;0.326464311053444;0.133234846180000;-0.0990295278644668;0.191613623406062;-0.0220781684059992;-0.114388769814720;-0.0281154786455814;-0.0267948523934677;0.0150910218935099;-0.0177829463551522;0.0356502576404348;-0.0384919731640682;-0.00508822854579525;0.0342361381018197;-0.00178940157318698];
