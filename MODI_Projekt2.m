@@ -73,6 +73,7 @@ for j=1:N
     plot(temp(:,1),temp(:,2));
     h = scatter(u_stat_learning,y_stat_learning);
     h.Marker='.';
+    
     hold off;
     legend('y_{mod}','y_{data}');
     title(sprintf('N=%i Error for learning data: %3.6f', j, e_learning));
@@ -105,9 +106,9 @@ ylabel('error');
 title('Static models error');
 legend('Learning set error','Validating set error');
 %% Dynamic models identification.
-na_vector = [1 2 3 4 5 6 7];
-nb_vector = [1 2 3 4 5 6 7];
-model_degrees = [1 2 3 4 5 6 7];
+na_vector = [1 2 3];
+nb_vector = [1 2 3];
+model_degrees = [4];
 
 % Read data.
 [u_val, y_val] = readData('danedynwer4/danedynwer4.txt');
@@ -149,7 +150,7 @@ for degree=model_degrees
             fprintf('Parameter number=%i',na*nb*degree);
             [W, a,b, Error] = getDynamicModel(na, nb, degree, u_learning, y_learning,'no') %yes, no
             
-            %Validating for validatiing set.
+            %Validating for validating set.
             figure;
             hold on;
             plot(1:length(u_val),u_val)
@@ -273,28 +274,30 @@ zlabel('error');
 legend('Learning data set', 'Validate data set');
 
 %% Experimental static characteristic degree
-Wdyn = [0.000664964992374448;0.00840022541185356;-0.00385019962425829;0.0126918890956658;0.0297501377147536;-0.00908219924044421;-0.0209870455236019;-0.0347898616553102;0.00389270250560253;-0.0147251628540515;0.0379405433374021;0.0113439870870900;0.0264050893831101;0.0129786889612299;0.0399999350273695;0.0234411739204131;0.00691202657199602;0.545394830849041;0.326464311053444;0.133234846180000;-0.0990295278644668;0.191613623406062;-0.0220781684059992;-0.114388769814720;-0.0281154786455814;-0.0267948523934677;0.0150910218935099;-0.0177829463551522;0.0356502576404348;-0.0384919731640682;-0.00508822854579525;0.0342361381018197;-0.00178940157318698];
-na_dyn = 4;
-nb_dyn = 4;
+Wdyn = [0.000786710918940768;0.00971851836342742;-0.00566455268910801;0.0378557760065196;-0.00962486368394634;-0.0190167722829831;-0.0277668824896670;-0.0162057911952584;0.0410550353905343;0.0273646910861693;0.0140043206660687;0.0369037284397377;0.0214125552967531;0.646008533218705;0.305804310023911;-0.0331735917626980;0.239226287731482;-0.0448363688532810;-0.166127343212899;-0.0378999562861265;0.0258987469595992;0.0160369765652906;-0.0558765903992842;0.0133885133033708;0.0322432988597730];
+na_dyn = 3;
+nb_dyn = 3;
 degree_dyn = 4;
 
-Wstat = [];
+Wstat = [-0.0263181262905372;0.425039558691621;-0.312092295546417;0.739817033525020;0.730562166211161];
 
 y0 = 0;
-u0= -1:0.1:1;
+u0= -1:0.05:1;
 y_dyn_vector = zeros(length(u0),1);
 y_stat_vector = zeros(length(u0),1);
+
+options = optimoptions('fsolve','Display','off','StepTolerance',10e-12);
 
 for i=1:length(u0)
     i
     
     %Found static value form dynamic model.
-    static_ch_fun = @(x) x - countStaticFromModel(u0(i), x, W, na_dyn, nb_dyn, degree_dyn);
-    y_dyn_vector(i) = fsolve(static_ch_fun,y0);
+    static_ch_fun = @(x) x - countStaticFromModel(u0(i), x, Wdyn, na_dyn, nb_dyn, degree_dyn);
+    y_dyn_vector(i) = fsolve(static_ch_fun,y0,options);
     
     %Count static value from static model.
     for j=1:length(Wstat)
-        y_stat_vector = y_stat_vector + W(j)*u0(i).^(j-1);
+        y_stat_vector(i) = y_stat_vector(i) + Wstat(j)*u0(i).^(j-1);
     end
 end
 
@@ -308,3 +311,40 @@ xlabel('u_{stat}');
 ylabel('y_{stat}');
 legend('from dynamic model', 'from static model')
 
+u0_points = [-0.6 -0.2 0.2 0.6];
+y_stat_points = [];
+sim_time = 1000;
+mode = "OE";
+for u0_actual = u0_points
+    y_vector_poly = zeros(1,sim_time);
+    for i=max(na_dyn,nb_dyn)+1:sim_time
+    u = 1;
+    for j=1:degree_dyn
+        for k=1:nb_dyn
+           u = [u u0_actual.^j]; 
+        end
+    end
+    for j=1:degree_dyn
+        for k=1:na_dyn
+            switch(mode)
+                case 'ARX'
+                    u = [u zeros(i-k).^j]; 
+                case 'OE'
+                    u = [u y_vector_poly(i-k).^j]; 
+            end
+        end
+    end      
+    y_vector_poly(1,i) = Wdyn'*u';
+    end
+    y_stat_points = [y_stat_points y_vector_poly(1,end)];
+end
+
+figure;
+plot(u0,y_dyn_vector);
+hold on;
+scatter(u0_points,y_stat_points);
+hold off;
+title('Static model from dynamic model vs. experimental static value');
+xlabel('u_{stat}');
+ylabel('y_{stat}');
+legend('from dynamic model', 'experimental value')
